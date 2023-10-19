@@ -1,57 +1,38 @@
-import autograd.numpy as np 
+import numpy as np
+import numpy.random as npr
+import scipy.stats as sps
 import matplotlib.pyplot as plt
-from autograd import grad
-from autograd.scipy import stats
 
-sig = np.array([[1, 0.998], [0.998, 1]])
+def ltarget(x):
+    if np.abs(x)>.99 and np.abs(x) < 3:
+        return sps.norm.logpdf(x, 0, 1)
+    else:
+        return -np.inf
 
-def H(theta, r):
-    return -pi(theta) + (1/2)*(np.sum(r**2))
+def eval_logq(xp, x):
+    return 0
 
-def pi(theta):
-    return stats.multivariate_normal.logpdf(theta, mean=np.zeros(2), cov=sig)
+def sample_q(x):
+    return x + npr.triangular(-5,0,5)
 
-grad_logpdf_target = grad(pi)
-    
-def leapfrog(theta, r, epsilon, L):
-    for _ in range(L):
-        r = r + (epsilon / 2) * grad_logpdf_target(theta)
-        theta = theta + epsilon * r
-        r = r + (epsilon / 2) * grad_logpdf_target(theta)
-        
-    return theta, r
+x0 = 0
+x = 0
+samples = [x]
+accepted_count = 0
 
-acceptance_rates = []
-x = np.linspace(0.001, 0.1, 100)
-H_orig = H(np.array([0,0]), np.array([1,1/3]))
+for i in range(10000):     
+    xp = sample_q(x)
+    accrate = np.minimum(1, np.exp(ltarget(xp) + eval_logq(x, xp) - ltarget(x) - eval_logq(xp, x)))
+    if (npr.uniform() < accrate):
+        x = xp
+        accepted_count += 1
 
-for eps in x:
-    theta_new, r_new = leapfrog(np.array([0,0]), np.array([1,1/3]), eps, 10)
-    
-    H_new = H(theta_new, r_new)
-    acceptance_rates.append(np.exp(H_orig - H_new))
+    samples.append(x)
 
-index_below_60 = next((i for i, v in enumerate(acceptance_rates) if v < 0.6), None)
-index_above_10 = len(acceptance_rates) - 1 - next((i for i, v in enumerate(reversed(acceptance_rates)) if v > 0.1), None)
-
-print(f'smallest eps below 60% = {x[index_below_60]}')
-print(f'largest eps above 10% = {x[index_above_10]}')
-# plt.plot(x, acceptance_rates)
-
-distances = []
-theta_0 = np.array([0,0])
-r_0 = np.array([1, 1/3])
-
-theta_i = theta_0.copy()
-r_i = r_0.copy()
-
-
-for _ in range(500):
-    # H_old = H(theta_i, r)
-    theta_i, r_i = leapfrog(theta_i, r_i, 0.05, 1)
-    # H_new = H(theta_i, r)
-    distances.append(np.linalg.norm(theta_0-theta_i))
-distances = distances
-# print(distances)
-plt.plot(np.arange(len(distances)), distances)
+print(f'Acceptrance rate is {accepted_count / len(samples)}')
+samples = np.array(samples[len(samples)//2:])
+# plt.plot(np.arange(len(samples)), samples)
+x=np.linspace(-20, 20)
+plt.plot(x, [ltarget(x) for x in x])
+plt.hist(samples, bins=100, density=True)
 plt.show()
