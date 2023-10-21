@@ -4,35 +4,31 @@ import scipy.stats as sps
 import matplotlib.pyplot as plt
 
 def ltarget(x):
-    if np.abs(x)>.99 and np.abs(x) < 3:
-        return sps.norm.logpdf(x, 0, 1)
-    else:
-        return -np.inf
+        return -np.log(np.abs(np.sin(x)))
 
 def eval_logq(xp, x):
-    return 0
+    return sps.norm.logpdf(xp,loc=x,scale=1.0)
 
 def sample_q(x):
-    return x + npr.triangular(-5,0,5)
+    return x + npr.normal(0, 1.0)
 
-x0 = 0
-x = 0
+x = 5
 samples = [x]
 accepted_count = 0
 
-for i in range(10000):     
+for i in range(1000):
     xp = sample_q(x)
-    accrate = np.minimum(1, np.exp(ltarget(xp) + eval_logq(x, xp) - ltarget(x) - eval_logq(xp, x)))
-    if (npr.uniform() < accrate):
+    a = np.minimum(1, np.exp(ltarget(xp) + eval_logq(x, xp) - ltarget(x) - eval_logq(xp, x)))
+    if (npr.uniform() < a):
         x = xp
         accepted_count += 1
 
     samples.append(x)
 
 print(f'Acceptrance rate is {accepted_count / len(samples)}')
-samples = np.array(samples[len(samples)//2:])
+samples = np.array(samples)[len(samples)//2:]
 # plt.plot(np.arange(len(samples)), samples)
-x=np.linspace(-20, 20)
-plt.plot(x, [ltarget(x) for x in x])
-plt.hist(samples, bins=100, density=True)
+x=np.linspace(-5000, 5000, 500)
+plt.plot(x, [np.exp(ltarget(x)) for x in x])
+plt.hist(samples, bins=300, density=True)
 plt.show()
