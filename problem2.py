@@ -46,7 +46,7 @@ def lp2(x, Psi, nu):
 
     # Decompose with cholesky, and calcuate the trace using einsum (hopefuly correctly)
     Y = np.linalg.solve(np.linalg.cholesky(x), Psi)
-    tr = np.einsum('ij,ji->', Y, Y.T)
+    tr = np.einsum('ij,ji', Y, Y.T)
 
     return (0.5 * nu * log_det_Psi
         - 0.5 * nu * p * np.log(2)
