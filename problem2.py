@@ -44,11 +44,15 @@ def lp2(x, Psi, nu):
     _, log_det_x = slogdet(x)
     _, log_det_Psi = slogdet(Psi)
 
+    # Decompose with cholesky, and calcuate the trace using einsum (hopefuly correctly)
+    Y = np.linalg.solve(np.linalg.cholesky(x), Psi)
+    tr = np.einsum('ij,ji->', Y, Y.T)
+
     return (0.5 * nu * log_det_Psi
         - 0.5 * nu * p * np.log(2)
         - multigammaln(nu / 2, p)
         - 0.5 * (nu+p+1) * log_det_x
-        - 0.5 * np.trace(np.dot(Psi, np.linalg.inv(x))))
+        - 0.5 * tr)
 
 # x = np.linspace(1e-20, 5, 1000)
 # nu = np.array([0.1,2])
@@ -58,3 +62,50 @@ def lp2(x, Psi, nu):
 
 # plt.plot(x, test1)
 # plt.show()
+# import numpy as np
+# import matplotlib.pyplot as plt
+
+
+# def plot_log_inverse_wishart(Psi, nu, num_points=100):
+#     """
+#     Generate a plot of log-probability densities from the inverse Wishart distribution.
+
+#     Parameters:
+#     Psi : ndarray
+#         Scale matrix of the inverse Wishart distribution.
+#     nu : float
+#         Degrees of freedom of the inverse Wishart distribution.
+#     num_points : int, optional
+#         Number of matrices to generate for the plot.
+#     """
+#     p = Psi.shape[0]
+#     log_probs = []
+#     determinants = np.logspace(-10, -1, num_points)  # Small determinant values
+
+#     for det in determinants:
+#         # Create a matrix with a given determinant and some randomness
+#         A = np.random.rand(p, p)
+#         Q, _ = np.linalg.qr(A)  # Make it orthogonal
+#         X = Q @ np.diag([det] * p) @ Q.T
+
+#         # Ensure it's symmetric positive definite
+#         X = (X + X.T) / 2 + p * np.eye(p)
+
+#         # Compute log-probability density
+#         log_prob = lp2(X, Psi, nu)
+#         log_probs.append(log_prob)
+
+#     plt.plot(determinants, log_probs, marker='o', linestyle='-')
+#     plt.title('Log-Probability Density of Inverse Wishart Distribution')
+#     plt.xlabel('Determinant of X')
+#     plt.ylabel('Log-Probability Density')
+#     plt.xscale('log')
+#     plt.show()
+
+# # Define symmetric positive definite matrix Psi and degrees of freedom nu
+# p = 50  # Size of the matrix
+# Psi = np.eye(p)  # Identity matrix as an example
+# nu = p + 1  # Degrees of freedom (should be > p - 1)
+
+# # Generate plot
+# plot_log_inverse_wishart(Psi, nu)
