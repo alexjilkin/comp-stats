@@ -8,6 +8,9 @@ import numpy.linalg as lg
 import scipy.linalg as slg
 import scipy.special as scs
 import matplotlib.pyplot as plt
+from scipy.special import multigammaln
+from scipy import linalg
+from numpy.linalg import slogdet
 
 def lp1(x, nu, w):
     """Returns log p(x | v, w).
@@ -37,17 +40,21 @@ def lp2(x, Psi, nu):
     Psi: np.array, shape: (p,p)
     nu: double, \nu > p-1
     """
-    return np.nan
+    p = len(x)
+    _, log_det_x = slogdet(x)
+    _, log_det_Psi = slogdet(Psi)
 
-x = np.linspace(1e-20, 5, 1000)
-nu = np.array([0.5,1])
-w = np.array([0.9, 0.1])
+    return (0.5 * nu * log_det_Psi
+        - 0.5 * nu * p * np.log(2)
+        - multigammaln(nu / 2, p)
+        - 0.5 * (nu+p+1) * log_det_x
+        - 0.5 * np.trace(np.dot(Psi, np.linalg.inv(x))))
 
-test1 = [lp1(x, nu, w) for x in x]
+# x = np.linspace(1e-20, 5, 1000)
+# nu = np.array([0.1,2])
+# w = np.array([0.9, 0.1])
 
-plt.plot(x, np.exp(test1))
-plt.show()
-print(test1)
+# test1 = [lp1(x, nu, w) for x in x]
 
-test2 = lp2(np.eye(2)-.1, np.eye(2)+.1, 3.)
-print(test2)
+# plt.plot(x, test1)
+# plt.show()
